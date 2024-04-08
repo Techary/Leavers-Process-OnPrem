@@ -37,7 +37,7 @@ A custom rule must be set in ADConnect that looks for msDS-CloudExtensionAttribu
 
 8. Accept the admin request
 9. Follow the instructions on the CLI (it should give you a link to follow to grant further admin consent)   
-10. Run `import-module Leavers_Process-OnPrem.ps1`
+10. Run `import-module Leavers-Process-OnPrem.psm1`
 #### Usage
 1. Open powershell as an administrator
 2. Run `invoke-leaversprocess <upn>`
