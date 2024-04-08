@@ -1,3 +1,9 @@
+if($null -eq (get-module -ListAvailable exchangeonlinemanagement)) {
+    install-module exchangeonlinemanagement
+}
+if($null -eq (get-module -ListAvailable microsoft.graph)) {
+    install-module microsoft.graph
+}
 $dbstore = "dbstore.csv"
 if (test-path $dbstore) {
     write-error "Setup should only be run once. If you want to re-do the setup, delete the 'dbstore.csv' file in this folder"
@@ -37,7 +43,7 @@ $context = Get-MgContext
 $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($CertPath)
 Write-Host -ForegroundColor Cyan "Certificate loaded"
 # Create app registration
-$appRegistration = New-MgApplication -DisplayName "Leavers_process_OnPrem" -SignInAudience "AzureADMyOrg" -Web @{ RedirectUris="http://localhost"; } -RequiredResourceAccess @{ ResourceAppId=$graphResourceId; ResourceAccess=$UserAuthenticationMethodReadAll,$UserReadWriteAll,$GroupReadWriteAll,$DirectoryReadWriteAll } -AdditionalProperties @{} -KeyCredentials @(@{ Type="AsymmetricX509Cert"; Usage="Verify"; Key=$cert.RawData })
+$appRegistration = New-MgApplication -DisplayName "Leavers_process_OnPrem" -SignInAudience "AzureADMyOrg" -Web @{ RedirectUris="http://localhost"; } -RequiredResourceAccess @{ ResourceAppId=$graphResourceId; ResourceAccess=$UserAuthenticationMethodReadAll,$UserReadWriteAll,$GroupReadWriteAll,$DirectoryReadWriteAll,$ExchangeManageAsApp} -AdditionalProperties @{} -KeyCredentials @(@{ Type="AsymmetricX509Cert"; Usage="Verify"; Key=$cert.RawData })
 Write-Host -ForegroundColor Cyan "App registration created with app ID" $appRegistration.AppId
 $servicePrincipal = Get-MgServicePrincipal -Filter "displayName eq 'Leavers_process_OnPrem'"
 $params = @{
