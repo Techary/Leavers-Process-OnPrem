@@ -1,14 +1,21 @@
-if($null -eq (get-module -ListAvailable exchangeonlinemanagement)) {
-    install-module exchangeonlinemanagement
-}
-if($null -eq (get-module -ListAvailable microsoft.graph)) {
-    install-module microsoft.graph
-}
 $dbstore = "dbstore.csv"
 if (test-path $dbstore) {
     write-error "Setup should only be run once. If you want to re-do the setup, delete the 'dbstore.csv' file in this folder"
     Pause
     exit
+}
+if ($PSVersionTable.psversion.major -lt 6) {
+    write-warning "This module is best run in powershell core."
+    $powershell = "powershell core"
+}
+if ($powershell) {
+    write-warning "$powershell is not installed, this script module runs best in $powershell"
+}
+if($null -eq (get-module -ListAvailable exchangeonlinemanagement)) {
+    install-module exchangeonlinemanagement
+}
+if($null -eq (get-module -ListAvailable microsoft.graph)) {
+    install-module microsoft.graph
 }
 $certname = "GraphAPI"
 $certpath = "$psscriptroot\$certname.cer"
@@ -45,13 +52,13 @@ Write-Host -ForegroundColor Cyan "Certificate loaded"
 # Create app registration
 $appRegistration = New-MgApplication -DisplayName "Leavers_process_OnPrem" -SignInAudience "AzureADMyOrg" -Web @{ RedirectUris="http://localhost"; } -RequiredResourceAccess @{ ResourceAppId=$graphResourceId; ResourceAccess=$UserAuthenticationMethodReadAll,$UserReadWriteAll,$GroupReadWriteAll,$DirectoryReadWriteAll,$ExchangeManageAsApp} -AdditionalProperties @{} -KeyCredentials @(@{ Type="AsymmetricX509Cert"; Usage="Verify"; Key=$cert.RawData })
 Write-Host -ForegroundColor Cyan "App registration created with app ID" $appRegistration.AppId
+# Create corresponding service principal
+New-MgServicePrincipal -AppId $appRegistration.AppId -AdditionalProperties @{} | Out-Null
 $servicePrincipal = Get-MgServicePrincipal -Filter "displayName eq 'Leavers_process_OnPrem'"
 $params = @{
 	"@odata.id" = "https://graph.microsoft.com/v1.0/directoryObjects/$($servicePrincipal.id)"
 }
 New-MgDirectoryRoleMemberByRef -DirectoryRoleId 0b837ff7-2497-4133-af95-5bac9aa6c423 -BodyParameter $params
-# Create corresponding service principal
-New-MgServicePrincipal -AppId $appRegistration.AppId -AdditionalProperties @{} | Out-Null
 Write-Host -ForegroundColor Cyan "Service principal created"
 Write-Host
 Write-Host -ForegroundColor Green "Success"
