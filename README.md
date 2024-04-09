@@ -1,4 +1,4 @@
-# Leavers-Process-CloudOnly
+# Leavers-Process-OnPrem
 *THIS IS ONLY FOR 365 WITH SYNC TO ON PREMISE DIRECTORY*
 
 ### Converts a leavers mailbox to shared, removes the licence, asks if you want to:  
