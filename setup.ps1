@@ -26,6 +26,7 @@ $certpath = "$psscriptroot\$certname.cer"
 $cert = New-SelfSignedCertificate -Subject "CN=$certname" -CertStoreLocation "Cert:\CurrentUser\My" -KeyExportPolicy Exportable -KeySpec Signature -KeyLength 2048 -KeyAlgorithm RSA -HashAlgorithm SHA256
 Export-Certificate -Cert $cert -FilePath $certpath | out-null
 $graphResourceId = "00000003-0000-0000-c000-000000000000"
+$ExchangeResourceID = "00000002-0000-0ff1-ce00-000000000000"
 $UserAuthenticationMethodReadAll = @{
     Id="38d9df27-64da-44fd-b7c5-a6fbac20248f"
     Type="Role"
@@ -50,7 +51,7 @@ Connect-MgGraph -Scopes "Application.ReadWrite.All User.Read Domain.Read.All Dir
 $context = Get-MgContext
 $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($CertPath)
 Write-Host -ForegroundColor Cyan "Certificate loaded"
-$appRegistration = New-MgApplication -DisplayName "Leavers_process_OnPrem" -SignInAudience "AzureADMyOrg" -Web @{ RedirectUris="http://localhost"; } -RequiredResourceAccess @{ ResourceAppId=$graphResourceId; ResourceAccess=$UserAuthenticationMethodReadAll,$UserReadWriteAll,$GroupReadWriteAll,$DirectoryReadWriteAll,$ExchangeManageAsApp} -AdditionalProperties @{} -KeyCredentials @(@{ Type="AsymmetricX509Cert"; Usage="Verify"; Key=$cert.RawData })
+$appRegistration = New-MgApplication -DisplayName "Leavers_process_OnPrem" -SignInAudience "AzureADMyOrg" -Web @{ RedirectUris="http://localhost"; } -RequiredResourceAccess @( @{ResourceAppId=$graphResourceId; ResourceAccess=$UserAuthenticationMethodReadAll,$UserReadWriteAll,$GroupReadWriteAll,$DirectoryReadWriteAll}, @{ResourceAppId=$ExchangeResourceID; ResourceAccess=$ExchangeManageAsApp}) -AdditionalProperties @{} -KeyCredentials @(@{ Type="AsymmetricX509Cert"; Usage="Verify"; Key=$cert.RawData })
 Write-Host -ForegroundColor Cyan "App registration created with app ID" $appRegistration.AppId
 New-MgServicePrincipal -AppId $appRegistration.AppId -AdditionalProperties @{} | Out-Null
 $servicePrincipal = Get-MgServicePrincipal -Filter "displayName eq 'Leavers_process_OnPrem'"
