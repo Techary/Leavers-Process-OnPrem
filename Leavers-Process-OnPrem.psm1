@@ -3,6 +3,19 @@ function invoke-leaverprocess {
             [Parameter(Mandatory)][string[]]$upnArray,
             [switch]$NoPrompt
     )
+    function print-TecharyLogo {
+    $logo = "
+     _______        _
+    |__   __|      | |
+       | | ___  ___| |__   __ _ _ __ _   _
+       | |/ _ \/ __| '_ \ / _`` | '__| | | |
+       | |  __/ (__| | | | (_| | |  | |_| |
+       |_|\___|\___|_| |_|\__,_|_|   \__, |
+                                      __/ |
+                                     |___/
+    "
+    write-host -ForegroundColor Green $logo
+    }
     function Get-365Login {
         $dbstoreExists = Test-Path $script:dbstore
         if($dbstoreExists -eq $false) {
@@ -15,7 +28,7 @@ function invoke-leaverprocess {
     function connect-365 {
         import-module activedirectory
         import-module exchangeonlinemanagement
-        import-module microsoft.graph
+        import-module microsoft.graph.users
         $dbdata = import-csv $script:dbstore
         Connect-ExchangeOnline  `
             -AppId $dbdata.appid `
@@ -110,31 +123,39 @@ function invoke-leaverprocess {
         }
     }
     function Remove-GAL {
-        if($script:NoPrompt) {
-            write-host "Removing from GAL..."
-            get-aduser -filter "userPrincipalName -eq '$global:upn'" | Set-ADUser -Replace @{"msDS-CloudExtensionAttribute1"="HideFromGAL"}
-            remove-distributionGroups
-        }
-        else  {
-            cls
-            Write-host "**********************"
-            Write-host "** Remove from GAL  **"
-            Write-Host "**********************"  
-            $script:hideFromGAL = Read-Host "Do you want to remove the mailbox from the global address list? ( y / n ) "
-            if ($script:hideFromGAL -eq 'Y') {
-                get-aduser -filter "userPrincipalName -eq '$global:upn'" | Set-ADUser -Replace @{"msDS-CloudExtensionAttribute1"="HideFromGAL"}
-                Write-host "$global:upn has been hidden"
-                start-sleep 1
-                remove-distributionGroups
+            Do {
+                Clear-Host
+                print-TecharyLogo
+                Write-host "**********************"
+                Write-host "** Remove from GAL  **"
+                Write-Host "**********************"
+                $script:hideFromGAL  = Read-Host "Do you want to remove the mailbox from the global address list? ( y / n ) "
+                Switch ($script:hideFromGAL) {
+                    Y {
+                        try {
+                            get-aduser -filter "userPrincipalName -eq '$global:upn'" | Set-ADUser -Replace @{"msDS-CloudExtensionAttribute1"="HideFromGAL"}
+                        }
+                        catch {
+                            write-host "Unable to hide from GAL"
+                            $_.exception[0]
+                            $script:GALError = $true
+                        }
+                        finally {
+                            if($null -eq $GALError) {
+                                Write-host "$script:userobject.userprincipalname has been hidden"
+                            }
+                        }
+                        remove-distributionGroups
+                    }
+                    N {
+                        remove-distributionGroups
+                    }
+                    Default {
+                        "You didn't enter an expect response, you idiot."
+                    }
+                }
             }
-            if ($script:hideFromGAL -eq 'N') { 
-                remove-distributionGroups   
-            }
-            else  {
-                Write-host "You didn't enter an expect response, you idiot."
-                Remove-GAL
-            }
-        }
+            until ($script:hideFromGAL  -eq 'y' -or $script:hideFromGAL  -eq 'n')
     }
     function remove-distributionGroups {
         if($script:NoPrompt) {
@@ -223,6 +244,7 @@ function invoke-leaverprocess {
                 }
                 N {
                     Set-MailboxAutoReplyConfiguration -Identity $script:userobject.userprincipalname -AutoReplyState Disabled
+                    Add-MailboxPermissions
                 }
                 Default {
                     "You didn't enter an expect response, you idiot."
@@ -428,7 +450,7 @@ function invoke-leaverprocess {
                 write-host -ForegroundColor red "`nThere was an error setting the password on this account. Please check the log at $psscriptroot\logs\$($script:userobject.userprincipalname).txt"
             }
             default {
-                write-host -ForegroundColor green "`nSet password to $($script:NewCloudPassword.password)"
+                write-host -ForegroundColor green "`nSet password to $script:NewLocalPassword"
             }
         }
         switch ($script:ConversionFailure) {
@@ -463,7 +485,7 @@ function invoke-leaverprocess {
         test-upn
         if($script:upnFound -eq "True") {
             disable-localAccount
-            $script:NewLocalPassword = ((get-stringhash $upn).hash + (get-random) + "%")
+            $script:NewLocalPassword = ((get-stringhash $upn.tostring()).hash + (get-random) + "%")
             $script:SecurePassword = ConvertTo-SecureString $script:NewLocalPassword -AsPlainText -force
             set-NewLocalPassword
             removeLicences
