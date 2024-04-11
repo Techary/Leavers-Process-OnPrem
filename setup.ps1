@@ -46,7 +46,7 @@ $ExchangeManageAsApp = @{
     Id="dc50a0fb-09a3-484d-be87-e023b12c6440"
     Type="Role"
 }
-Connect-MgGraph -Scopes "Application.ReadWrite.All User.Read Domain.Read.All Directory.ReadWrite.All RoleManagement.ReadWrite.Directory"
+Connect-MgGraph -Scopes "Application.ReadWrite.All User.Read Domain.Read.All Directory.ReadWrite.All RoleManagement.ReadWrite.Directory" -DeviceCode
 $context = Get-MgContext
 $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($CertPath)
 Write-Host -ForegroundColor Cyan "Certificate loaded"
