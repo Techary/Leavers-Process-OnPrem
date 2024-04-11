@@ -1,3 +1,4 @@
+#requires -runasadministrator
 $dbstore = "dbstore.csv"
 if (test-path $dbstore) {
     write-error "Setup should only be run once. If you want to re-do the setup, delete the 'dbstore.csv' file in this folder"
@@ -24,7 +25,7 @@ if($null -eq (get-module -ListAvailable microsoft.graph)) {
 $certname = "GraphAPI"
 $certpath = "$psscriptroot\$certname.cer"
 $cert = New-SelfSignedCertificate -Subject "CN=$certname" -CertStoreLocation "Cert:\CurrentUser\My" -KeyExportPolicy Exportable -KeySpec Signature -KeyLength 2048 -KeyAlgorithm RSA -HashAlgorithm SHA256
-Export-Certificate -Cert $cert -FilePath $certpath
+Export-Certificate -Cert $cert -FilePath $certpath | out-null
 $graphResourceId = "00000003-0000-0000-c000-000000000000"
 $UserAuthenticationMethodReadAll = @{
     Id="38d9df27-64da-44fd-b7c5-a6fbac20248f"
@@ -46,7 +47,7 @@ $ExchangeManageAsApp = @{
     Id="dc50a0fb-09a3-484d-be87-e023b12c6440"
     Type="Role"
 }
-Connect-MgGraph -Scopes "Application.ReadWrite.All User.Read Domain.Read.All Directory.ReadWrite.All RoleManagement.ReadWrite.Directory" -DeviceCode
+Connect-MgGraph -Scopes "Application.ReadWrite.All User.Read Domain.Read.All Directory.ReadWrite.All RoleManagement.ReadWrite.Directory" -DeviceCode -NoWelcome
 $context = Get-MgContext
 $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($CertPath)
 Write-Host -ForegroundColor Cyan "Certificate loaded"
@@ -57,7 +58,9 @@ $servicePrincipal = Get-MgServicePrincipal -Filter "displayName eq 'Leavers_proc
 $params = @{
 	"@odata.id" = "https://graph.microsoft.com/v1.0/directoryObjects/$($servicePrincipal.id)"
 }
-New-MgDirectoryRoleMemberByRef -DirectoryRoleId 0b837ff7-2497-4133-af95-5bac9aa6c423 -BodyParameter $params
+New-MgDirectoryRole -RoleTemplateId 29232cdf-9323-42fd-ade2-1d097af3e4de
+$ExchangeRole = Get-MgDirectoryRole -Filter "displayname eq 'Exchange Administrator'"
+New-MgDirectoryRoleMemberByRef -DirectoryRoleId $exchangerole.Id -BodyParameter $params
 Write-Host -ForegroundColor Cyan "Service principal created"
 Write-Host
 Write-Host -ForegroundColor Green "Success"
@@ -66,15 +69,12 @@ $adminConsentUrl = "https://login.microsoftonline.com/" + $context.TenantId + "/
 Write-Host -ForeGroundColor Yellow "Please go to the following URL in your browser to provide admin consent"
 Write-Host $adminConsentUrl
 Write-Host
-Disconnect-MgGraph
-Write-Host "Disconnected from Microsoft Graph"
 remove-item $certpath -Force
-if ($null -eq $TenantId) {
-    $TenantId = (Get-MgOrganization).id
-}
 $script:dbdata = @{}
 $dbdata["OrgName"] = (get-mgdomain | where {$_.id.EndsWith(".onmicrosoft.com")}).id
 $dbdata["AppID"] = $appRegistration.AppId
 $dbdata['CertThumbprint'] = $cert.Thumbprint
-$dbdata['TennantID'] = $TenantId
+$dbdata['TennantID'] = (Get-MgOrganization).id
 $dbdata | export-csv $dbstore
+Disconnect-MgGraph
+Write-Host "Disconnected from Microsoft Graph"
