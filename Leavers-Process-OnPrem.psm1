@@ -52,10 +52,10 @@ function invoke-leaverprocess {
         param (
             [Parameter()]
             [string]
-            $input
+            $string
         )
-        if ($null -eq $input ) {
-            $input = read-host "Enter string"
+        if ($null -eq $string) {
+            $string = read-host "Enter string"
         }
         $stringAsStream = [System.IO.MemoryStream]::new()
         $writer = [System.IO.StreamWriter]::new($stringAsStream)
