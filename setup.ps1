@@ -68,7 +68,7 @@ $servicePrincipal = Get-MgServicePrincipal -Filter "displayName eq 'Leavers_proc
 $params = @{
 	"@odata.id" = "https://graph.microsoft.com/v1.0/directoryObjects/$($servicePrincipal.id)"
 }
-New-MgDirectoryRole -RoleTemplateId 29232cdf-9323-42fd-ade2-1d097af3e4de
+New-MgDirectoryRole -RoleTemplateId 29232cdf-9323-42fd-ade2-1d097af3e4de -erroraction SilentlyContinue
 $ExchangeRole = Get-MgDirectoryRole -Filter "displayname eq 'Exchange Administrator'"
 New-MgDirectoryRoleMemberByRef -DirectoryRoleId $exchangerole.Id -BodyParameter $params
 Write-Host -ForegroundColor Cyan "Service principal created"
