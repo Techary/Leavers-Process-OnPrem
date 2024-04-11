@@ -1,6 +1,6 @@
 function invoke-leaverprocess {
     param (
-            [Parameter(Mandatory)][string[]]$upn,
+            [Parameter(Mandatory)][string[]]$upnArray,
             [switch]$NoPrompt
     )
     function Get-365Login {
@@ -459,7 +459,7 @@ function invoke-leaverprocess {
     $Script:UserNotFound = $null
     $script:dbstore = "dbstore.csv"
     get-365login
-    foreach($Global:upn in $upn) {
+    foreach($Global:upn in $upnArray) {
         test-upn
         if($script:upnFound -eq "True") {
             disable-localAccount
