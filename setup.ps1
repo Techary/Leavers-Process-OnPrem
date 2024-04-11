@@ -1,4 +1,3 @@
-#requires -runasadministrator
 $dbstore = "dbstore.csv"
 if (test-path $dbstore) {
     write-error "Setup should only be run once. If you want to re-do the setup, delete the 'dbstore.csv' file in this folder"

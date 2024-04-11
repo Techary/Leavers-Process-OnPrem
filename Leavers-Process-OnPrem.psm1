@@ -1,8 +1,4 @@
 function invoke-leaverprocess {
-    #requires -module exchangeonlinemanagement
-    #requires -module activedirectory
-    #requires -module microsoft.graph
-
     param (
             [Parameter(Mandatory)][string[]]$upn,
             [switch]$NoPrompt
