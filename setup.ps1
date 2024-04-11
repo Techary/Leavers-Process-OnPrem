@@ -71,7 +71,7 @@ Write-Host $adminConsentUrl
 Write-Host
 remove-item $certpath -Force
 $script:dbdata = @{}
-$dbdata["OrgName"] = (get-mgdomain | where {$_.id.EndsWith(".onmicrosoft.com")}).id
+$dbdata["OrgName"] = (get-mgdomain | where {$_.id.EndsWith(".onmicrosoft.com")})[0].id
 $dbdata["AppID"] = $appRegistration.AppId
 $dbdata['CertThumbprint'] = $cert.Thumbprint
 $dbdata['TennantID'] = (Get-MgOrganization).id
