@@ -57,8 +57,7 @@ $requiredGrants = @(
         )
     }
 )
-
-get-
+Connect-MgGraph -Scopes "Application.ReadWrite.All User.Read Domain.Read.All Directory.ReadWrite.All RoleManagement.ReadWrite.Directory" -DeviceCode -NoWelcome
 $context = Get-MgContext
 $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($CertPath)
 Write-Host -ForegroundColor Cyan "Certificate loaded"
