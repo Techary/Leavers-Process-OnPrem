@@ -25,33 +25,44 @@ $certname = "GraphAPI"
 $certpath = "$psscriptroot\$certname.cer"
 $cert = New-SelfSignedCertificate -Subject "CN=$certname" -CertStoreLocation "Cert:\CurrentUser\My" -KeyExportPolicy Exportable -KeySpec Signature -KeyLength 2048 -KeyAlgorithm RSA -HashAlgorithm SHA256
 Export-Certificate -Cert $cert -FilePath $certpath | out-null
-$graphResourceId = "00000003-0000-0000-c000-000000000000"
-$ExchangeResourceID = "00000002-0000-0ff1-ce00-000000000000"
-$UserAuthenticationMethodReadAll = @{
-    Id="38d9df27-64da-44fd-b7c5-a6fbac20248f"
-    Type="Role"
-}
-$UserReadWriteAll = @{
-    Id="741f803b-c850-494e-b5df-cde7c675a1ca"
-    Type="Role"
-}
-$GroupReadWriteAll = @{
-    Id="62a82d76-70ea-41e2-9197-370581804d09"
-    Type="Role"
-}
-$DirectoryReadWriteAll = @{
-    Id="19dbc75e-c2e2-444c-a770-ec69d8559fc7"
-    Type="Role"
-}
-$ExchangeManageAsApp = @{
-    Id="dc50a0fb-09a3-484d-be87-e023b12c6440"
-    Type="Role"
-}
-Connect-MgGraph -Scopes "Application.ReadWrite.All User.Read Domain.Read.All Directory.ReadWrite.All RoleManagement.ReadWrite.Directory" -DeviceCode -NoWelcome
+$requiredGrants = @(
+    @{
+        ResourceAppId = "00000003-0000-0000-c000-000000000000"
+        ResourceAccess = @(
+            @{
+                Id="38d9df27-64da-44fd-b7c5-a6fbac20248f"
+                Type="Role"
+            },
+            @{
+                Id="741f803b-c850-494e-b5df-cde7c675a1ca"
+                Type="Role"
+            },
+            @{
+                Id="62a82d76-70ea-41e2-9197-370581804d09"
+                Type="Role"
+            },
+            @{
+                Id="19dbc75e-c2e2-444c-a770-ec69d8559fc7"
+                Type="Role"
+            }
+        )
+    }
+    @{
+        ResourceAppId = "00000002-0000-0ff1-ce00-000000000000"
+        ResourceAccess = @(
+            @{
+                Id="dc50a0fb-09a3-484d-be87-e023b12c6440"
+                Type="Role"
+            }
+        )
+    }
+)
+
+get-
 $context = Get-MgContext
 $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($CertPath)
 Write-Host -ForegroundColor Cyan "Certificate loaded"
-$appRegistration = New-MgApplication -DisplayName "Leavers_process_OnPrem" -SignInAudience "AzureADMyOrg" -Web @{ RedirectUris="http://localhost"; } -RequiredResourceAccess @( @{ResourceAppId=$graphResourceId; ResourceAccess=$UserAuthenticationMethodReadAll,$UserReadWriteAll,$GroupReadWriteAll,$DirectoryReadWriteAll}, @{ResourceAppId=$ExchangeResourceID; ResourceAccess=$ExchangeManageAsApp}) -AdditionalProperties @{} -KeyCredentials @(@{ Type="AsymmetricX509Cert"; Usage="Verify"; Key=$cert.RawData })
+$appRegistration = New-MgApplication -DisplayName "Leavers_process_OnPrem" -SignInAudience "AzureADMyOrg" -Web @{ RedirectUris="http://localhost"; } -RequiredResourceAccess $requiredGrants -AdditionalProperties @{} -KeyCredentials @(@{ Type="AsymmetricX509Cert"; Usage="Verify"; Key=$cert.RawData })
 Write-Host -ForegroundColor Cyan "App registration created with app ID" $appRegistration.AppId
 New-MgServicePrincipal -AppId $appRegistration.AppId -AdditionalProperties @{} | Out-Null
 $servicePrincipal = Get-MgServicePrincipal -Filter "displayName eq 'Leavers_process_OnPrem'"
