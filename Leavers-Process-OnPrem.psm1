@@ -479,7 +479,7 @@ function invoke-leaverprocess {
     $today = get-date -format dd-MM-yyyy
     Start-Transcript -Append -path "C:\users\$env:username\leaverslog\$today.txt"
     $Script:UserNotFound = $null
-    $script:dbstore = "dbstore.csv"
+    $script:dbstore = "$([Environment]::GetFolderPath("MyDocuments"))\Powershell\Modules\Leavers-Process-OnPrem\dbstore.csv"
     get-365login
     foreach($Global:upn in $upnArray) {
         test-upn
