@@ -123,6 +123,24 @@ function invoke-leaverprocess {
         }
     }
     function Remove-GAL {
+        if($script:NoPrompt) {
+            ForEach ($item in $DistributionGroupsList)  {
+                try {
+                    get-aduser -filter "userPrincipalName -eq '$global:upn'" | Set-ADUser -Replace @{"msDS-CloudExtensionAttribute1"="HideFromGAL"}
+                }
+                catch {
+                    write-host "Unable to hide from GAL"
+                    $_.exception[0]
+                    $script:GALError = $true
+                }
+                finally {
+                    if($null -eq $GALError) {
+                        Write-host "$script:userobject.userprincipalname has been hidden"
+                    }
+                }
+            }
+        }
+        else {
             Do {
                 Clear-Host
                 print-TecharyLogo
@@ -156,6 +174,7 @@ function invoke-leaverprocess {
                 }
             }
             until ($script:hideFromGAL  -eq 'y' -or $script:hideFromGAL  -eq 'n')
+        }
     }
     function remove-distributionGroups {
         if($script:NoPrompt) {
@@ -216,137 +235,158 @@ function invoke-leaverprocess {
         }
     }
     function Add-Autoreply {
-        Do {
-            Clear-Host
-            print-TecharyLogo
-            Write-Host "***************"
-            Write-host "** Autoreply **"
-            Write-host "***************"
-            $script:autoreply = Read-Host "Do you want to add an auto-reply to $($script:userobject.userprincipalname)'s mailbox? Y will add a new OOF; N will turn off any pre-existing OOF; Leave won't make any changes but, will show you a good boy. ( y / n / leave ) "
-            Switch ($script:autoreply) {
-                Y {
-                    $oof = Read-Host "Enter auto-reply"
-                    try {
-                        #Not supported in MGGraph yet
-                        set-MailboxAutoReplyConfiguration -Identity $script:userobject.userprincipalname -AutoReplyState Enabled -ExternalMessage "$oof" -InternalMessage "$oof" -ErrorAction stop
-                    }
-                    catch {
-                        Write-output "Unable to set auto-reply"
-                        $_.exception
-                        $script:AutoReplyError = $true
-                    }
-                    finally {
-                        if($null -eq $AutoReplyError) {
-                            write-host "Auto-reply added."
-                        }
-                    }
-                    Add-MailboxPermissions
-                }
-                N {
-                    Set-MailboxAutoReplyConfiguration -Identity $script:userobject.userprincipalname -AutoReplyState Disabled
-                    Add-MailboxPermissions
-                }
-                Default {
-                    "You didn't enter an expect response, you idiot."
-                }
-                Leave {
-                    write-host "  __      _"
-                    write-host  "o'')}____//"
-                    write-host  " `_/      )"
-                    write-host  " (_(_/-(_/"
-                    start-sleep 5
-                    Add-MailboxPermissions
-                }
+        if($script:NoPrompt) {
+            ForEach ($item in $DistributionGroupsList)  {
+                Add-MailboxPermissions
             }
-
         }
-        until ($script:autoreply -eq 'y' -or $script:autoreply -eq 'n' -or $script:autoreply -eq 'Dog')
-    }
-    function Add-MailboxPermissions {
-        Do {
-            Clear-Host
-            print-TecharyLogo
-            Write-host "*************************"
-            Write-host "** Mailbox Permissions **"
-            Write-Host "*************************"
-            $script:mailboxpermissions = Read-Host "Do you want anyone to have access to this mailbox? ( y / n ) "
-            Switch ($script:mailboxpermissions) {
-                Y {
-                    $script:WhichUserPermissions = Read-Host "Enter the E-mail address of the user that should have access to this mailbox "
-                    if(get-mguser -filter "UserPrincipalName eq '$script:WhichUserPermissions'" -ErrorAction SilentlyContinue) {
+        else {
+            Do {
+                Clear-Host
+                print-TecharyLogo
+                Write-Host "***************"
+                Write-host "** Autoreply **"
+                Write-host "***************"
+                $script:autoreply = Read-Host "Do you want to add an auto-reply to $($script:userobject.userprincipalname)'s mailbox? Y will add a new OOF; N will turn off any pre-existing OOF; Leave won't make any changes but, will show you a good boy. ( y / n / leave ) "
+                Switch ($script:autoreply) {
+                    Y {
+                        $oof = Read-Host "Enter auto-reply"
                         try {
-                            add-mailboxpermission -identity $script:userobject.userprincipalname -user $script:WhichUserPermissions -AccessRights FullAccess -erroraction stop
+                            #Not supported in MGGraph yet
+                            set-MailboxAutoReplyConfiguration -Identity $script:userobject.userprincipalname -AutoReplyState Enabled -ExternalMessage "$oof" -InternalMessage "$oof" -ErrorAction stop
                         }
                         catch {
-                            write-output "Unable to add permissions"
-                            $_.exception[0]
-                            $script:MailboxError = $true
+                            Write-output "Unable to set auto-reply"
+                            $_.exception
+                            $script:AutoReplyError = $true
                         }
                         finally {
-                            if($null -eq $MailboxError) {
-                                Write-host "Malibox permisions for $script:WhichUserPermissions have been added"
+                            if($null -eq $AutoReplyError) {
+                                write-host "Auto-reply added."
                             }
                         }
-                        }
-                    else {
-                        Write-output "$script:WhichUserPermissions not found. Please try again"
-                        start-sleep 3
                         Add-MailboxPermissions
                     }
-                    Add-MailboxForwarding
+                    N {
+                        Set-MailboxAutoReplyConfiguration -Identity $script:userobject.userprincipalname -AutoReplyState Disabled
+                        Add-MailboxPermissions
+                    }
+                    Default {
+                        "You didn't enter an expect response, you idiot."
+                    }
+                    Leave {
+                        write-host "  __      _"
+                        write-host  "o'')}____//"
+                        write-host  " `_/      )"
+                        write-host  " (_(_/-(_/"
+                        start-sleep 5
+                        Add-MailboxPermissions
+                    }
                 }
-                N {
-                    Add-MailboxForwarding
-                }
-                Default {
-                    "You didn't enter an expect response, you idiot."
-                }
+
+            }
+            until ($script:autoreply -eq 'y' -or $script:autoreply -eq 'n' -or $script:autoreply -eq 'Dog')
+        }
+    }
+    function Add-MailboxPermissions {
+        if($script:NoPrompt) {
+            ForEach ($item in $DistributionGroupsList)  {
+                Add-MailboxForwarding
             }
         }
-        until ($script:mailboxpermissions -eq 'y' -or $script:mailboxpermissions -eq 'n')
-    }
-    function Add-MailboxForwarding {
-        Do {
-            Clear-Host
-            print-TecharyLogo
-            Write-host "*************************"
-            Write-host "** Mailbox Forwarding **"
-            Write-Host "*************************"
-            $script:mailboxForwarding = Read-Host "Do you want any forwarding in place on this account? ( y / n ) "
-            Switch ($script:mailboxForwarding) {
-                Y { 
-                    $script:WhichUserForwarding = Read-Host "Enter the E-mail address of the user that emails should be forwarded to "
-                    if(get-mguser -filter "UserPrincipalName eq '$script:WhichUserForwarding'" -ErrorAction SilentlyContinue) {
-                        try {
-                            Set-Mailbox $script:userobject.userprincipalname -ForwardingAddress $script:WhichUserForwarding -erroraction stop
-                        }
-                        catch {
-                            write-output "Unable to add permissions"
-                            $_.exception[0]
-                            $script:ForwardingError = $true
-                        }
-                        finally {
-                            if($null -eq $script:ForwardingError) {
-                                Write-host "Malibox forwarding to $script:WhichUserForwarding has been added"
+        else {
+            Do {
+                Clear-Host
+                print-TecharyLogo
+                Write-host "*************************"
+                Write-host "** Mailbox Permissions **"
+                Write-Host "*************************"
+                $script:mailboxpermissions = Read-Host "Do you want anyone to have access to this mailbox? ( y / n ) "
+                Switch ($script:mailboxpermissions) {
+                    Y {
+                        $script:WhichUserPermissions = Read-Host "Enter the E-mail address of the user that should have access to this mailbox "
+                        if(get-mguser -filter "UserPrincipalName eq '$script:WhichUserPermissions'" -ErrorAction SilentlyContinue) {
+                            try {
+                                add-mailboxpermission -identity $script:userobject.userprincipalname -user $script:WhichUserPermissions -AccessRights FullAccess -erroraction stop
                             }
+                            catch {
+                                write-output "Unable to add permissions"
+                                $_.exception[0]
+                                $script:MailboxError = $true
+                            }
+                            finally {
+                                if($null -eq $MailboxError) {
+                                    Write-host "Malibox permisions for $script:WhichUserPermissions have been added"
+                                }
+                            }
+                            }
+                        else {
+                            Write-output "$script:WhichUserPermissions not found. Please try again"
+                            start-sleep 3
+                            Add-MailboxPermissions
                         }
-                    }
-                    else {
-                        Write-output "$script:WhichUserForwarding not found. Please try again"
-                        start-sleep 3
                         Add-MailboxForwarding
                     }
-                    write-result
+                    N {
+                        Add-MailboxForwarding
                     }
-                N {
-                    write-result
-                }
-                Default {
-                    "You didn't enter an expect response, you idiot."
+                    Default {
+                        "You didn't enter an expect response, you idiot."
+                    }
                 }
             }
+            until ($script:mailboxpermissions -eq 'y' -or $script:mailboxpermissions -eq 'n')
         }
-        until ($script:mailboxforwarding -eq 'y' -or $script:mailboxforwarding -eq 'n')
+    }
+    function Add-MailboxForwarding {
+        if($script:NoPrompt) {
+            ForEach ($item in $DistributionGroupsList)  {
+                write-result
+            }
+        }
+        else {
+            Do {
+                Clear-Host
+                print-TecharyLogo
+                Write-host "*************************"
+                Write-host "** Mailbox Forwarding **"
+                Write-Host "*************************"
+                $script:mailboxForwarding = Read-Host "Do you want any forwarding in place on this account? ( y / n ) "
+                Switch ($script:mailboxForwarding) {
+                    Y { 
+                        $script:WhichUserForwarding = Read-Host "Enter the E-mail address of the user that emails should be forwarded to "
+                        if(get-mguser -filter "UserPrincipalName eq '$script:WhichUserForwarding'" -ErrorAction SilentlyContinue) {
+                            try {
+                                Set-Mailbox $script:userobject.userprincipalname -ForwardingAddress $script:WhichUserForwarding -erroraction stop
+                            }
+                            catch {
+                                write-output "Unable to add permissions"
+                                $_.exception[0]
+                                $script:ForwardingError = $true
+                            }
+                            finally {
+                                if($null -eq $script:ForwardingError) {
+                                    Write-host "Malibox forwarding to $script:WhichUserForwarding has been added"
+                                }
+                            }
+                        }
+                        else {
+                            Write-output "$script:WhichUserForwarding not found. Please try again"
+                            start-sleep 3
+                            Add-MailboxForwarding
+                        }
+                        write-result
+                        }
+                    N {
+                        write-result
+                    }
+                    Default {
+                        "You didn't enter an expect response, you idiot."
+                    }
+                }
+            }
+            until ($script:mailboxforwarding -eq 'y' -or $script:mailboxforwarding -eq 'n')
+        }
     }
     function write-result {
         Clear-Host
