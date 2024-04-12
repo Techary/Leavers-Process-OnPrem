@@ -63,8 +63,7 @@ $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate
 Write-Host -ForegroundColor Cyan "Certificate loaded"
 $appRegistration = New-MgApplication -DisplayName "Leavers_process_OnPrem" -SignInAudience "AzureADMyOrg" -Web @{ RedirectUris="http://localhost"; } -RequiredResourceAccess $requiredGrants -AdditionalProperties @{} -KeyCredentials @(@{ Type="AsymmetricX509Cert"; Usage="Verify"; Key=$cert.RawData })
 Write-Host -ForegroundColor Cyan "App registration created with app ID" $appRegistration.AppId
-New-MgServicePrincipal -AppId $appRegistration.AppId -AdditionalProperties @{} | Out-Null
-$servicePrincipal = Get-MgServicePrincipal -Filter "displayName eq 'Leavers_process_OnPrem'"
+$servicePrincipal = New-MgServicePrincipal -AppId $appRegistration.AppId -AdditionalProperties @{} | Out-Null
 $params = @{
 	"@odata.id" = "https://graph.microsoft.com/v1.0/directoryObjects/$($servicePrincipal.id)"
 }
@@ -86,5 +85,5 @@ $dbdata["AppID"] = $appRegistration.AppId
 $dbdata['CertThumbprint'] = $cert.Thumbprint
 $dbdata['TennantID'] = (Get-MgOrganization).id
 $dbdata | export-csv $dbstore
-Disconnect-MgGraph
+Disconnect-MgGraph | out-null
 Write-Host "Disconnected from Microsoft Graph"
