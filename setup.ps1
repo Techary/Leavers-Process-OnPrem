@@ -18,8 +18,8 @@ if ($RSAT.state -eq "NotPresent") {
 if($null -eq (get-module -ListAvailable exchangeonlinemanagement)) {
     install-module exchangeonlinemanagement
 }
-if($null -eq (get-module -ListAvailable microsoft.graph)) {
-    install-module microsoft.graph
+if($null -eq (get-module -ListAvailable microsoft.graph.users)) {
+    install-module microsoft.graph.users
 }
 $certname = "GraphAPI"
 $certpath = "$psscriptroot\$certname.cer"
