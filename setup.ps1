@@ -75,6 +75,8 @@ $params = @{
 }
 New-MgDirectoryRole -RoleTemplateId 29232cdf-9323-42fd-ade2-1d097af3e4de -erroraction SilentlyContinue
 $ExchangeRole = Get-MgDirectoryRole -Filter "displayname eq 'Exchange Administrator'"
+start-sleep 30
+Write-output "Sleeping for 30 seconds. zzzzz"
 New-MgDirectoryRoleMemberByRef -DirectoryRoleId $exchangerole.Id -BodyParameter $params
 Write-Host -ForegroundColor Cyan "Service principal created"
 Write-Host
