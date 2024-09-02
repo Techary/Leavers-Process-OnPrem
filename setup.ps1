@@ -21,6 +21,9 @@ if($null -eq (get-module -ListAvailable exchangeonlinemanagement)) {
 if($null -eq (get-module -ListAvailable microsoft.graph.users)) {
     install-module microsoft.graph.users
 }
+if($null -eq (get-module -ListAvailable microsoft.graph.applications)) {
+    install-module microsoft.graph.applications
+}
 $certname = "GraphAPI"
 $certpath = "$psscriptroot\$certname.cer"
 $cert = New-SelfSignedCertificate -Subject "CN=$certname" -CertStoreLocation "Cert:\CurrentUser\My" -KeyExportPolicy Exportable -KeySpec Signature -KeyLength 2048 -KeyAlgorithm RSA -HashAlgorithm SHA256
