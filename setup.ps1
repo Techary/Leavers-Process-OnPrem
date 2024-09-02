@@ -16,16 +16,16 @@ if ($RSAT.state -eq "NotPresent") {
     Add-WindowsCapability -Online -Name "Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0"
 }
 if($null -eq (get-module -ListAvailable exchangeonlinemanagement)) {
-    install-module exchangeonlinemanagement
+    install-module exchangeonlinemanagement -force
 }
 if($null -eq (get-module -ListAvailable microsoft.graph.users)) {
-    install-module microsoft.graph.users
+    install-module microsoft.graph.users -force
 }
 if($null -eq (get-module -ListAvailable microsoft.graph.applications)) {
-    install-module microsoft.graph.applications
+    install-module microsoft.graph.applications -force
 }
 if($null -eq (get-module -ListAvailable Microsoft.Graph.Identity.DirectoryManagement)) {
-    install-module Microsoft.Graph.Identity.DirectoryManagement
+    install-module Microsoft.Graph.Identity.DirectoryManagement -force
 }
 $certname = "GraphAPI"
 $certpath = "$psscriptroot\$certname.cer"
@@ -69,7 +69,7 @@ $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate
 Write-Host -ForegroundColor Cyan "Certificate loaded"
 $appRegistration = New-MgApplication -DisplayName "Leavers_process_OnPrem" -SignInAudience "AzureADMyOrg" -Web @{ RedirectUris="http://localhost"; } -RequiredResourceAccess $requiredGrants -AdditionalProperties @{} -KeyCredentials @(@{ Type="AsymmetricX509Cert"; Usage="Verify"; Key=$cert.RawData })
 Write-Host -ForegroundColor Cyan "App registration created with app ID" $appRegistration.AppId
-$servicePrincipal = New-MgServicePrincipal -AppId $appRegistration.AppId -AdditionalProperties @{} | Out-Null
+$servicePrincipal = New-MgServicePrincipal -AppId $appRegistration.AppId -AdditionalProperties @{}
 $params = @{
 	"@odata.id" = "https://graph.microsoft.com/v1.0/directoryObjects/$($servicePrincipal.id)"
 }
