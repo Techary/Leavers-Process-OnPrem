@@ -27,9 +27,6 @@ if($null -eq (get-module -ListAvailable microsoft.graph.applications)) {
 if($null -eq (get-module -ListAvailable Microsoft.Graph.Identity.DirectoryManagement)) {
     install-module Microsoft.Graph.Identity.DirectoryManagement
 }
-if($null -eq (get-module -ListAvailable Microsoft.Graph.Identity.DirectoryManagement)) {
-    install-module Microsoft.Graph.Identity.DirectoryManagement
-}
 $certname = "GraphAPI"
 $certpath = "$psscriptroot\$certname.cer"
 $cert = New-SelfSignedCertificate -Subject "CN=$certname" -CertStoreLocation "Cert:\CurrentUser\My" -KeyExportPolicy Exportable -KeySpec Signature -KeyLength 2048 -KeyAlgorithm RSA -HashAlgorithm SHA256
