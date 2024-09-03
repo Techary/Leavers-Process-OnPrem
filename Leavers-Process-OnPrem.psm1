@@ -1,6 +1,9 @@
 function invoke-leaverprocess {
     param (
             [Parameter(Mandatory)][string[]]$upnArray,
+            [Parameter(Mandatory=$false)][string[]]$oof,
+            [Parameter(Mandatory=$false)][string[]]$WhichUserPermissions,
+            [Parameter(Mandatory=$false)][string[]]$WhichUserForwarding,
             [switch]$NoPrompt
     )
     function print-TecharyLogo {
@@ -236,9 +239,17 @@ function invoke-leaverprocess {
     }
     function Add-Autoreply {
         if($script:NoPrompt) {
-            ForEach ($item in $DistributionGroupsList)  {
-                Add-MailboxPermissions
+            if($outofoffice) {
+                try {
+                    set-MailboxAutoReplyConfiguration -Identity $script:userobject.userprincipalname -AutoReplyState Enabled -ExternalMessage "$oof" -InternalMessage "$oof" -ErrorAction stop
+                }
+                catch {
+                    Write-output "Unable to set auto-reply"
+                    $_.exception
+                    $script:AutoReplyError = $true
+                }
             }
+        Add-MailboxPermissions
         }
         else {
             Do {
@@ -290,9 +301,17 @@ function invoke-leaverprocess {
     }
     function Add-MailboxPermissions {
         if($script:NoPrompt) {
-            ForEach ($item in $DistributionGroupsList)  {
-                Add-MailboxForwarding
+            if($WhichUserPermissions){
+                try {
+                    add-mailboxpermission -identity $script:userobject.userprincipalname -user $script:WhichUserPermissions -AccessRights FullAccess -erroraction stop
+                }
+                catch {
+                    write-output "Unable to add permissions"
+                    $_.exception[0]
+                    $script:MailboxError = $true
+                }
             }
+        Add-MailboxForwarding
         }
         else {
             Do {
@@ -340,9 +359,17 @@ function invoke-leaverprocess {
     }
     function Add-MailboxForwarding {
         if($script:NoPrompt) {
-            ForEach ($item in $DistributionGroupsList)  {
-                write-result
+            if($WhichUserForwarding){
+                try {
+                    Set-Mailbox $script:userobject.userprincipalname -ForwardingAddress $script:WhichUserForwarding -erroraction stop
+                }
+                catch {
+                    write-output "Unable to add permissions"
+                    $_.exception[0]
+                    $script:ForwardingError = $true
+                }
             }
+        write-result
         }
         else {
             Do {
