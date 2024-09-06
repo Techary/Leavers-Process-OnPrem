@@ -43,6 +43,6 @@ A custom rule must be set in ADConnect that looks for msDS-CloudExtensionAttribu
 1. Open powershell as an administrator.
 2. Run `git pull` while in the `<pathToPowershellModulesFolder>\Leavers-Process-OnPrem` folder. This ensures the process is up-to-date.
 3. Run `import-module <pathToPowershellModulesFolder>\Leavers-Process-OnPrem.psm1` (If you skipped step 11)
-4. Run `invoke-leaversprocess <upn>`
+4. Run `invoke-leaverprocess <upn>`
 
 See the [Wiki](https://github.com/Techary/Leavers-Process-OnPrem/wiki/How-to-use) for more examples.
