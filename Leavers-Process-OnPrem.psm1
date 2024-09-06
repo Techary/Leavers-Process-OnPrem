@@ -239,15 +239,13 @@ function invoke-leaverprocess {
     }
     function Add-Autoreply {
         if($script:NoPrompt) {
-            if($outofoffice) {
-                try {
-                    set-MailboxAutoReplyConfiguration -Identity $script:userobject.userprincipalname -AutoReplyState Enabled -ExternalMessage "$oof" -InternalMessage "$oof" -ErrorAction stop
-                }
-                catch {
-                    Write-output "Unable to set auto-reply"
-                    $_.exception
-                    $script:AutoReplyError = $true
-                }
+            try {
+                set-MailboxAutoReplyConfiguration -Identity $script:userobject.userprincipalname -AutoReplyState Enabled -ExternalMessage "$oof" -InternalMessage "$oof" -ErrorAction stop
+            }
+            catch {
+                Write-output "Unable to set auto-reply"
+                $_.exception
+                $script:AutoReplyError = $true
             }
         Add-MailboxPermissions
         }
